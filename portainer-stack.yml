@@ -1,0 +1,88 @@
+services:
+  agent:
+    image: portainer/agent:lts
+    networks:
+      - nginx_network
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/volumes:/var/lib/docker/volumes
+    deploy:
+      mode: global
+      placement:
+        constraints: [node.platform.os == linux]
+
+  portainer:
+    image: portainer/portainer-ee:lts
+    command: -H tcp://tasks.agent:9001 --tlsskipverify
+    volumes:
+      - portainer_data:/data
+    networks:
+      - nginx_network
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [node.role == manager]
+
+  nginx_proxy_manager_db:
+    image: 'jc21/mariadb-aria:latest'
+    networks:
+      - nginx_network
+    environment:
+      MYSQL_ROOT_PASSWORD: 'npm'
+      MYSQL_DATABASE: 'npm'
+      MYSQL_USER: 'npm'
+      MYSQL_PASSWORD: 'npm1passwD2'
+      MARIADB_AUTO_UPGRADE: '1'
+    volumes:
+      - nginx_proxy_manager_db:/var/lib/mysql
+    # only deploy in manager node
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [node.role == manager]
+
+  nginx_proxy_manager:
+    image: 'jc21/nginx-proxy-manager:latest'
+    networks:
+      - nginx_network
+    ports:
+      - target: 80
+        published: 80
+        protocol: tcp
+        mode: host
+      - target: 443
+        published: 443
+        protocol: tcp
+        mode: host
+    environment:
+     # Mysql/Maria connection parameters:
+      DB_MYSQL_HOST: "tasks.nginx_proxy_manager_db"
+      DB_MYSQL_PORT: 3306
+      DB_MYSQL_USER: "npm"
+      DB_MYSQL_PASSWORD: "npm1passwD2"
+      DB_MYSQL_NAME: "npm"
+      # Uncomment this if IPv6 is not enabled on your host
+      # DISABLE_IPV6: 'true'
+    volumes:
+      - nginx_proxy_manager_data:/data
+      - nginx_proxy_manager_letsencrypt:/etc/letsencrypt
+    #command: sh -c "curl -fsSL https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh -o /wait-for-it.sh && chmod +x /wait-for-it.sh && /wait-for-it.sh -t 60 tasks.nginx_proxy_manager_db:3306 -- /bin/sh -c 'exec /init'"
+    # only deploy in manager node
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [node.role == manager]
+
+networks:
+  nginx_network:
+    driver: overlay
+    attachable: true
+
+volumes:
+  portainer_data:
+  nginx_proxy_manager_data:
+  nginx_proxy_manager_letsencrypt:
+  nginx_proxy_manager_db:
