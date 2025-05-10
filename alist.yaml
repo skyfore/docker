@@ -1,0 +1,30 @@
+services:
+  alist:
+    image: 'xhofe/alist'
+    volumes:
+      - alist:/opt/alist/data
+    environment:
+      - PUID=0
+      - PGID=0
+      - UMASK=022
+    networks:
+      - nginx_network
+    deploy:
+      placement:
+        constraints:
+          - node.labels.htpc == true
+      replicas: 1
+      restart_policy:
+        condition: any
+    logging:
+      driver: json-file
+      options:
+        max-size: 1m
+
+volumes:
+  alist:
+
+networks:
+  nginx_network:
+    external: true
+    name: portainer_nginx_network
