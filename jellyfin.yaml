@@ -1,0 +1,42 @@
+services:
+  jellyfin:
+    image: nyanmisaka/jellyfin
+    environment:
+      - PUID=65534
+      - PGID=65534
+      - UMASK=022
+      - TZ=Asia/Shanghai
+    volumes:
+      - jellyfin_config:/config
+      - jellyfin_cache:/cache
+      - media_library:/media
+    networks:
+      - nginx_network
+    deploy:
+      placement:
+        constraints:
+          - node.labels.htpc == true
+      replicas: 1
+      restart_policy:
+        condition: any
+    logging:
+      driver: json-file
+      options:
+        max-size: 1m
+    devices:
+      - /dev/dri:/dev/dri # 硬件加速支持
+
+volumes:
+  jellyfin_config:
+  jellyfin_cache:
+  media_library:
+    driver: local
+    driver_opts:
+      type: none
+      device: /mnt/nas/data/media
+      o: bind
+
+networks:
+  nginx_network:
+    external: true
+    name: portainer_nginx_network

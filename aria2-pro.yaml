@@ -29,6 +29,9 @@ services:
       driver: json-file
       options:
         max-size: 1m
+    extra_hosts:
+      # alist 发送的文件接收不到，不知道为啥
+      - alist.mamm.me:192.168.8.8
 
   ariang:
     image: p3terx/ariang
