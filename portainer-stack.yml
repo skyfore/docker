@@ -84,5 +84,23 @@ networks:
 volumes:
   portainer_data:
   nginx_proxy_manager_data:
-  nginx_proxy_manager_letsencrypt:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      # 保证一定要有该目录存在
+      device: /home/docker/npm-store/data
+  nginx_proxy_manager_letsencrypt: 
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      # 保证一定要有该目录存在
+      device: /home/docker/npm-store/letsencrypt
   nginx_proxy_manager_db:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      # 保证一定要有该目录存在
+      device: /home/docker/npm-store/db
